@@ -9,11 +9,11 @@ class SzegedyRandomWalk:
         self.col_stochastic = col_stochastic
         self.n = len(markov_chain)
         self.base = self.__construct_base()
-        self.alphas = self.__calculate_alphas()
-        self.betas = self.__calculate_betas()
+        self.alphas = self._calculate_alphas()
+        self.betas = self._calculate_betas()
         self.A, self.B = self.__construct_A_B()
-        self.pi_A, self.pi_B = self.__construct_pi_A_B()
-        self.operator = self.__construct_evolution_operator()
+        self.pi_A, self.pi_B = self._construct_pi_A_B()
+        self.operator = self._construct_evolution_operator()
 
     def classic_initial_state(self):
         state = np.zeros(self.n * self.n)
@@ -52,51 +52,64 @@ class SzegedyRandomWalk:
             base.append(base_i)
         return np.asarray(base)
 
-    def __calculate_alphas(self):
+    def _calculate_alphas(self, chain=None):
+        if chain is None:
+            chain = self.markov_chain
         alphas = []
         for i in range(self.n):
             alpha_i = np.zeros(self.n * self.n)
             for j in range(self.n):
                 if self.col_stochastic:
-                    alpha_i += np.sqrt(self.markov_chain[j, i]) * np.kron(self.base[i], self.base[j])
+                    alpha_i += np.sqrt(chain[j, i]) * np.kron(self.base[i], self.base[j])
                 else:
-                    alpha_i += np.sqrt(self.markov_chain[i, j]) * np.kron(self.base[i], self.base[j])
+                    alpha_i += np.sqrt(chain[i, j]) * np.kron(self.base[i], self.base[j])
             alphas.append(alpha_i)
         return alphas
 
-    def __calculate_betas(self):
+    def _calculate_betas(self, chain=None):
+        if chain is None:
+            chain = self.markov_chain
         betas = []
         for i in range(self.n):
             beta_i = np.zeros(self.n * self.n)
             for j in range(self.n):
                 if self.col_stochastic:
-                    beta_i += np.sqrt(self.markov_chain[j, i]) * np.kron(self.base[j], self.base[i])
+                    beta_i += np.sqrt(chain[j, i]) * np.kron(self.base[j], self.base[i])
                 else:
-                    beta_i += np.sqrt(self.markov_chain[i, j]) * np.kron(self.base[j], self.base[i])
+                    beta_i += np.sqrt(chain[i, j]) * np.kron(self.base[j], self.base[i])
             betas.append(beta_i)
         return betas
 
-    def __construct_A_B(self):
+    def __construct_A_B(self, alphas=None, betas=None):
+        if alphas is None or betas is None:
+            alphas = self.alphas
+            betas = self.betas
         A = np.zeros((self.n * self.n, self.n))
         B = np.zeros((self.n * self.n, self.n))
         for i in range(self.n):
-            A += np.tensordot(self.alphas[i], self.base[i].T, axes=0)
-            B += np.tensordot(self.betas[i], self.base[i].T, axes=0)
+            A += np.tensordot(alphas[i], self.base[i].T, axes=0)
+            B += np.tensordot(betas[i], self.base[i].T, axes=0)
         return A, B
 
-    def __construct_pi_A_B(self):
+    def _construct_pi_A_B(self, alphas=None, betas=None):
+        if alphas is None or betas is None:
+            alphas = self.alphas
+            betas = self.betas
         A = np.zeros((self.n * self.n, self.n * self.n))
         B = np.zeros((self.n * self.n, self.n * self.n))
 
         for i in range(self.n):
-            A += np.tensordot(self.alphas[i], np.conjugate(self.alphas[i]).T, axes=0)
-            B += np.tensordot(self.betas[i], np.conjugate(self.betas[i]).T, axes=0)
+            A += np.tensordot(alphas[i], np.conjugate(alphas[i]).T, axes=0)
+            B += np.tensordot(betas[i], np.conjugate(betas[i]).T, axes=0)
 
         return A, B
 
-    def __construct_evolution_operator(self):
-        r_a = 2 * self.pi_A - np.identity(self.n * self.n)
-        r_b = 2 * self.pi_B - np.identity(self.n * self.n)
+    def _construct_evolution_operator(self, pi_A=None, pi_B=None):
+        if pi_A is None or pi_B is None:
+            pi_A = self.pi_A
+            pi_B = self.pi_B
+        r_a = 2 * pi_A - np.identity(self.n * self.n)
+        r_b = 2 * pi_B - np.identity(self.n * self.n)
 
         return np.matmul(r_a, r_b)
 
