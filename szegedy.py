@@ -50,13 +50,9 @@ class SzegedyRandomWalk:
     def _construct_evolution_operator(self):
         return self.ref1 @ self.ref2
 
-    def state_at(self, time, initial_state, as_probability=False):
-        result = matrix_power(self.operator, time) @ initial_state
-        if as_probability:
-            return np.square(np.abs(result))
-        else:
-            return result
+    def state_at(self, time, initial_state, ):
+        return matrix_power(self.operator, time) @ initial_state
 
     def original_state_at(self, time, initial_state):
-        state_at = self.state_at(time, initial_state, True)
+        state_at = np.power(self.state_at(time, initial_state), 2)
         return state_at.reshape((self.n, self.n)).sum(axis=1)
