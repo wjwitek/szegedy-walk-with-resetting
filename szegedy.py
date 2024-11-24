@@ -48,7 +48,7 @@ class SzegedyRandomWalk:
         return ref1, ref2
 
     def _construct_evolution_operator(self):
-        return self.ref1 @ self.ref2
+        return self.ref2 @ self.ref1
 
     def state_at(self, time, initial_state, ):
         return matrix_power(self.operator, time) @ initial_state
