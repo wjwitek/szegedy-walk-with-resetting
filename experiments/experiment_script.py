@@ -1,4 +1,5 @@
-from utils import *
+from utils.utils import *
+from utils.graph_generators import *
 
 ht_50, prob_50 = graph_size_experiment_with_reset(get_cycle_graph, initial_state, 5, create_resetting_graph, resetting_rate=0.5)
 
